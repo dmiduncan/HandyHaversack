@@ -181,8 +181,14 @@ function renderTaskDetail(task, children, isParent, parentTaskId = null, isEditi
     const state = getState();
 
     let childHTML = '';
-    if (isParent && !isEditing && children.length > 0) {
-        childHTML = '<div class="child-tasks"><div class="task-detail-label">Subtasks</div>';
+    if (isParent && !isEditing) {
+        childHTML = `
+            <div class="child-tasks">
+                <div class="child-tasks-header">
+                    <div class="task-detail-label">Subtasks</div>
+                    <button type="button" class="button button--primary add-child-btn" id="add-child-btn">+</button>
+                </div>
+        `;
         children.forEach(child => {
             const childStatusClass = getChildStatusClass(child.status);
             childHTML += `
@@ -274,10 +280,6 @@ function renderTaskDetail(task, children, isParent, parentTaskId = null, isEditi
             ` : `
                 <button type="button" class="button button--primary" id="edit-task-btn">Edit</button>
             `}
-            ${!isEditing && isParent ? '<button type="button" class="button button--primary add-child-btn" id="add-child-btn">+ Add Subtask</button>' : ''}
-            ${!isEditing && !isParent ? `
-                <span class="task-detail-parent-note">This subtask belongs to the parent task above.</span>
-            ` : ''}
             ${!isEditing ? `<button type="button" class="button button--danger" id="delete-task-btn">Delete ${isParent ? 'Task' : 'Subtask'}</button>` : ''}
         </div>
     `;
