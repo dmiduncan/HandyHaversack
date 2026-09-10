@@ -206,12 +206,6 @@
     font-size: 0.9em;
 }
 
-.task-detail-back {
-    width: 100%;
-    margin-bottom: 0.25em;
-    text-align: left;
-}
-
 .task-detail-parent-note {
     color: var(--text-muted);
     font-size: 0.85em;
@@ -257,7 +251,35 @@
 
 .child-task-status {
     font-size: 0.8em;
+    width: fit-content;
+    padding: 0.2em 0.6em;
+    border: 1px solid;
+    border-radius: var(--radius);
+    font-weight: 500;
+}
+
+.child-task-status--neutral {
     color: var(--text-muted);
+    background: rgba(240, 237, 232, 0.08);
+    border-color: rgba(240, 237, 232, 0.2);
+}
+
+.child-task-status--done {
+    color: #9fd6aa;
+    background: rgba(96, 170, 111, 0.14);
+    border-color: #477c50;
+}
+
+.child-task-status--cancelled {
+    color: #e8a0a0;
+    background: rgba(184, 92, 92, 0.12);
+    border-color: #7a3d3d;
+}
+
+.child-task-status--active {
+    color: #e8c878;
+    background: rgba(232, 200, 120, 0.12);
+    border-color: #8a7135;
 }
 
 .add-child-btn {
