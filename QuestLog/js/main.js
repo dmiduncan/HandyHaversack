@@ -183,10 +183,11 @@ function renderTaskDetail(task, children, isParent, parentTaskId = null) {
     if (isParent && children.length > 0) {
         childHTML = '<div class="child-tasks"><div class="task-detail-label">Subtasks</div>';
         children.forEach(child => {
+            const childStatusClass = getChildStatusClass(child.status);
             childHTML += `
                 <button type="button" class="child-task-item" data-child-task-id="${child.id}">
                     <div class="child-task-title">${escapeHTML(child.title)}</div>
-                    <div class="child-task-status">${child.status}</div>
+                    <div class="child-task-status ${childStatusClass}">${escapeHTML(child.status)}</div>
                 </button>
             `;
         });
@@ -401,6 +402,24 @@ function escapeHTML(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+function getChildStatusClass(status) {
+    const normalizedStatus = status.trim().toLowerCase().replace(/\s+/g, '');
+
+    if (normalizedStatus === 'todo') {
+        return 'child-task-status--neutral';
+    }
+
+    if (normalizedStatus === 'done') {
+        return 'child-task-status--done';
+    }
+
+    if (normalizedStatus === 'cancelled') {
+        return 'child-task-status--cancelled';
+    }
+
+    return 'child-task-status--active';
 }
 
 // ── Initial Load ──────────────────────────────────────────────────────────────
