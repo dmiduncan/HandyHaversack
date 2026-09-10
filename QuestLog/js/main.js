@@ -11,6 +11,7 @@ import {
     deleteTask,
     createChildTask,
     fetchChildTasks,
+    updateChildTasks,
     calculateDaysUntilDue,
     dateToUTC,
     utcToLocalDate,
@@ -174,13 +175,20 @@ async function openDetailPanel(taskId) {
     renderTaskDetail(task, children || [], true);
 }
 
-function renderTaskDetail(task, children, isParent, parentTaskId = null) {
+function renderTaskDetail(task, children, isParent, parentTaskId = null, isEditing = false) {
     detailPanelParentTaskId = parentTaskId;
     const dayInfo = calculateDaysUntilDue(task.due_date);
+    const state = getState();
 
     let childHTML = '';
-    if (isParent && children.length > 0) {
-        childHTML = '<div class="child-tasks"><div class="task-detail-label">Subtasks</div>';
+    if (isParent && !isEditing) {
+        childHTML = `
+            <div class="child-tasks">
+                <div class="child-tasks-header">
+                    <div class="task-detail-label">Subtasks</div>
+                    <button type="button" class="button button--primary add-child-btn" id="add-child-btn">+</button>
+                </div>
+        `;
         children.forEach(child => {
             const childStatusClass = getChildStatusClass(child.status);
             childHTML += `
@@ -193,7 +201,7 @@ function renderTaskDetail(task, children, isParent, parentTaskId = null) {
         childHTML += '</div>';
     }
 
-    const dueHTML = task.due_date
+    const dueHTML = !isEditing && task.due_date
         ? `<div class="task-detail-field">
                <div class="task-detail-label">Due Date</div>
                <div class="task-detail-value">${utcToLocalDate(task.due_date)}</div>
@@ -201,18 +209,56 @@ function renderTaskDetail(task, children, isParent, parentTaskId = null) {
            </div>`
         : '';
 
-    panelContent.innerHTML = `
+    const editFieldsHTML = isEditing ? `
+        <div class="task-detail-field">
+            <label class="task-detail-label" for="edit-task-title">Title</label>
+            <input type="text" id="edit-task-title" value="${escapeAttribute(task.title)}" required>
+        </div>
+        <div class="task-detail-field">
+            <label class="task-detail-label" for="edit-task-description">Description</label>
+            <textarea id="edit-task-description">${escapeHTML(task.description || '')}</textarea>
+        </div>
+        ${!isParent ? `
+            <div class="task-detail-field">
+                <label class="task-detail-label" for="edit-parent-task">Parent Task</label>
+                <select id="edit-parent-task">
+                    ${state.parentTasks
+                        .filter(parent => parent.id !== task.id)
+                        .map(parent => `<option value="${parent.id}" ${parent.id === parentTaskId ? 'selected' : ''}>${escapeHTML(parent.title)}</option>`)
+                        .join('')}
+                </select>
+            </div>
+        ` : `
+            <div class="task-detail-field">
+                <label class="task-detail-label" for="edit-task-type">Task Type</label>
+                <input type="text" id="edit-task-type" value="${escapeAttribute(task.task_type || '')}">
+            </div>
+            <div class="task-detail-field">
+                <label class="task-detail-label" for="edit-task-due-date">Due Date</label>
+                <input type="date" id="edit-task-due-date" value="${task.due_date ? utcToLocalDate(task.due_date) : ''}">
+            </div>
+        `}
+    ` : `
         <div class="task-detail-field">
             <div class="task-detail-label">Title</div>
             <div class="task-detail-value">${escapeHTML(task.title)}</div>
         </div>
-
         ${task.description ? `
             <div class="task-detail-field">
                 <div class="task-detail-label">Description</div>
                 <div class="task-detail-value">${escapeHTML(task.description)}</div>
             </div>
         ` : ''}
+        ${task.task_type ? `
+            <div class="task-detail-field">
+                <div class="task-detail-label">Task Type</div>
+                <div class="task-detail-value">${escapeHTML(task.task_type)}</div>
+            </div>
+        ` : ''}
+    `;
+
+    panelContent.innerHTML = `
+        ${editFieldsHTML}
 
         <div class="task-detail-field">
             <div class="task-detail-label">Status</div>
@@ -223,24 +269,81 @@ function renderTaskDetail(task, children, isParent, parentTaskId = null) {
             </select>
         </div>
 
-        ${task.task_type ? `
-            <div class="task-detail-field">
-                <div class="task-detail-label">Task Type</div>
-                <div class="task-detail-value">${escapeHTML(task.task_type)}</div>
-            </div>
-        ` : ''}
-
         ${dueHTML}
 
         ${childHTML}
 
         <div class="task-detail-actions">
-            ${isParent ? '<button type="button" class="button button--primary add-child-btn" id="add-child-btn">+ Add Subtask</button>' : `
-                <span class="task-detail-parent-note">This subtask belongs to the parent task above.</span>
+            ${isEditing ? `
+                <button type="button" class="button button--primary" id="save-task-btn">Save</button>
+                <button type="button" class="button" id="cancel-edit-btn">Cancel</button>
+            ` : `
+                <button type="button" class="button button--primary" id="edit-task-btn">Edit</button>
             `}
-            <button type="button" class="button button--danger" id="delete-task-btn">Delete ${isParent ? 'Task' : 'Subtask'}</button>
+            ${!isEditing ? `<button type="button" class="button button--danger" id="delete-task-btn">Delete ${isParent ? 'Task' : 'Subtask'}</button>` : ''}
         </div>
     `;
+
+    document.getElementById('edit-task-btn')?.addEventListener('click', () => {
+        renderTaskDetail(task, children, isParent, parentTaskId, true);
+    });
+
+    document.getElementById('cancel-edit-btn')?.addEventListener('click', () => {
+        renderTaskDetail(task, children, isParent, parentTaskId);
+    });
+
+    document.getElementById('save-task-btn')?.addEventListener('click', async () => {
+        const title = document.getElementById('edit-task-title').value.trim();
+        if (!title) {
+            showErrorToast('Task title is required.');
+            return;
+        }
+
+        const updates = {
+            title,
+            description: document.getElementById('edit-task-description').value.trim() || null
+        };
+
+        if (isParent) {
+            updates.taskType = document.getElementById('edit-task-type').value.trim() || null;
+            updates.dueDate = document.getElementById('edit-task-due-date').value
+                ? dateToUTC(document.getElementById('edit-task-due-date').value)
+                : null;
+        } else {
+            updates.parentTaskId = Number(document.getElementById('edit-parent-task').value);
+        }
+
+        const saveButton = document.getElementById('save-task-btn');
+        saveButton.disabled = true;
+        const { error } = await updateTask(task.id, updates);
+
+        if (error) {
+            showErrorToast(`Failed to save task: ${error.message}`);
+            saveButton.disabled = false;
+            return;
+        }
+
+        if (isParent && (updates.taskType !== task.task_type || updates.dueDate !== task.due_date)) {
+            const cascadeResult = await updateChildTasks(task.id, {
+                taskType: updates.taskType,
+                dueDate: updates.dueDate
+            });
+            if (cascadeResult.error) {
+                showErrorToast(`Task saved, but subtasks could not be updated: ${cascadeResult.error.message}`);
+                await loadParentTasks();
+                openDetailPanel(task.id);
+                return;
+            }
+        }
+
+        showSuccessToast('Task updated!');
+        await loadParentTasks();
+        if (!isParent) {
+            openDetailPanel(updates.parentTaskId);
+        } else {
+            openDetailPanel(task.id);
+        }
+    });
 
     // Status change handler
     const statusSelect = document.getElementById('status-select');
@@ -399,6 +502,10 @@ function escapeHTML(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+function escapeAttribute(text) {
+    return escapeHTML(text).replace(/"/g, '&quot;');
 }
 
 function getChildStatusClass(status) {

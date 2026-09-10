@@ -206,16 +206,22 @@
     font-size: 0.9em;
 }
 
-.task-detail-parent-note {
-    color: var(--text-muted);
-    font-size: 0.85em;
-    text-align: center;
-}
-
 .child-tasks {
     border-top: 1px solid var(--border);
     padding-top: 1em;
     margin-top: 1em;
+}
+
+.child-tasks-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75em;
+    margin-bottom: 0.75em;
+}
+
+.child-tasks-header .task-detail-label {
+    margin: 0;
 }
 
 .child-task-item {
@@ -283,8 +289,8 @@
 }
 
 .add-child-btn {
-    width: 100%;
-    margin-top: 0.5em;
+    padding: 0.35em 0.7em;
+    font-size: 0.7em;
 }
 
 .task-detail-actions {

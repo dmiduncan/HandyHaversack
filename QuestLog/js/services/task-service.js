@@ -65,6 +65,7 @@ export async function updateTask(taskId, updates) {
     if (updates.taskType !== undefined) payload.task_type = updates.taskType;
     if (updates.status !== undefined) payload.status = updates.status;
     if (updates.dueDate !== undefined) payload.due_date = updates.dueDate;
+    if (updates.parentTaskId !== undefined) payload.parent_task_id = updates.parentTaskId;
 
     payload.updated_at = new Date().toISOString();
 
@@ -74,6 +75,24 @@ export async function updateTask(taskId, updates) {
         .eq('id', taskId)
         .select()
         .single();
+
+    return { data, error };
+}
+
+/**
+ * Update fields shared by all subtasks of a parent task.
+ */
+export async function updateChildTasks(parentTaskId, updates) {
+    const payload = { updated_at: new Date().toISOString() };
+
+    if (updates.taskType !== undefined) payload.task_type = updates.taskType;
+    if (updates.dueDate !== undefined) payload.due_date = updates.dueDate;
+
+    const { data, error } = await supabase
+        .from('lu_quest_tasks')
+        .update(payload)
+        .eq('parent_task_id', parentTaskId)
+        .select();
 
     return { data, error };
 }
@@ -108,7 +127,7 @@ export async function fetchChildTasks(parentTaskId) {
  * Create a new child task.
  */
 export async function createChildTask(userId, parentTaskId, taskData) {
-    const { title, description, status = 'To Do' } = taskData;
+    const { title, description, taskType, dueDate, status = 'To Do' } = taskData;
 
     const { data, error } = await supabase
         .from('lu_quest_tasks')
@@ -117,6 +136,8 @@ export async function createChildTask(userId, parentTaskId, taskData) {
             parent_task_id: parentTaskId,
             title,
             description: description || null,
+            task_type: taskType || null,
+            due_date: dueDate || null,
             status
         })
         .select()
