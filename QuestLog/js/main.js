@@ -45,7 +45,7 @@ function openCreateTaskModal() {
     taskForm.reset();
     taskTypeInput.readOnly = false;
     taskDueDateInput.readOnly = false;
-    document.getElementById('modal-title').textContent = 'Create New Quest';
+    document.getElementById('modal-title').textContent = 'Create New Task';
     taskTitleInput.focus();
     taskModal.classList.add('active');
 }
@@ -78,7 +78,7 @@ async function loadParentTasks() {
     const { data: types, error: typesError } = await fetchTaskTypes(state.user.id);
 
     if (tasksError || typesError) {
-        showErrorToast('Failed to load quests.');
+        showErrorToast('Failed to load tasks.');
         setState({ loading: false });
         return;
     }
@@ -91,7 +91,7 @@ function renderTasks(tasks, types) {
     if (!tasksContainer) return;
 
     if (tasks.length === 0) {
-        tasksContainer.innerHTML = '<p style="color: var(--text-muted);">No quests yet. Create one to get started!</p>';
+        tasksContainer.innerHTML = '<p style="color: var(--text-muted);">No tasks yet. Create one to get started!</p>';
         return;
     }
 
@@ -225,7 +225,7 @@ function renderTaskDetail(task, children, isParent, parentTaskId = null) {
 
         ${task.task_type ? `
             <div class="task-detail-field">
-                <div class="task-detail-label">Quest Type</div>
+                <div class="task-detail-label">Task Type</div>
                 <div class="task-detail-value">${escapeHTML(task.task_type)}</div>
             </div>
         ` : ''}
@@ -236,9 +236,9 @@ function renderTaskDetail(task, children, isParent, parentTaskId = null) {
 
         <div class="task-detail-actions">
             ${isParent ? '<button type="button" class="button button--primary add-child-btn" id="add-child-btn">+ Add Subtask</button>' : `
-                <span class="task-detail-parent-note">This subtask belongs to the parent quest above.</span>
+                <span class="task-detail-parent-note">This subtask belongs to the parent task above.</span>
             `}
-            <button type="button" class="button button--danger" id="delete-task-btn">Delete ${isParent ? 'Quest' : 'Subtask'}</button>
+            <button type="button" class="button button--danger" id="delete-task-btn">Delete ${isParent ? 'Task' : 'Subtask'}</button>
         </div>
     `;
 
@@ -274,7 +274,7 @@ function renderTaskDetail(task, children, isParent, parentTaskId = null) {
     }
 
     document.getElementById('delete-task-btn')?.addEventListener('click', async () => {
-        const label = isParent ? 'quest' : 'subtask';
+        const label = isParent ? 'task' : 'subtask';
         if (!window.confirm(`Delete this ${label}? This cannot be undone.`)) return;
 
         const deleteButton = document.getElementById('delete-task-btn');
@@ -287,7 +287,7 @@ function renderTaskDetail(task, children, isParent, parentTaskId = null) {
             return;
         }
 
-        showSuccessToast(`${isParent ? 'Quest' : 'Subtask'} deleted.`);
+        showSuccessToast(`${isParent ? 'Task' : 'Subtask'} deleted.`);
         closeDetailPanel();
         await loadParentTasks();
         if (!isParent && parentTaskId) {
