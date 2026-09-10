@@ -36,6 +36,7 @@ const taskDueDateInput = document.getElementById('task-due-date');
 const detailPanel = document.getElementById('task-detail-panel');
 const panelCloseBtn = document.getElementById('panel-close-btn');
 const panelContent = document.getElementById('panel-content');
+let detailPanelParentTaskId = null;
 
 // ── Modal Management ──────────────────────────────────────────────────────────
 
@@ -174,10 +175,8 @@ async function openDetailPanel(taskId) {
 }
 
 function renderTaskDetail(task, children, isParent, parentTaskId = null) {
+    detailPanelParentTaskId = parentTaskId;
     const dayInfo = calculateDaysUntilDue(task.due_date);
-    const parentTask = parentTaskId
-        ? getState().parentTasks.find(parent => parent.id === parentTaskId)
-        : null;
 
     let childHTML = '';
     if (isParent && children.length > 0) {
@@ -203,12 +202,6 @@ function renderTaskDetail(task, children, isParent, parentTaskId = null) {
         : '';
 
     panelContent.innerHTML = `
-        ${!isParent && parentTask ? `
-            <button type="button" class="button task-detail-back" id="back-to-parent-btn">
-                ← Back to ${escapeHTML(parentTask.title)}
-            </button>
-        ` : ''}
-
         <div class="task-detail-field">
             <div class="task-detail-label">Title</div>
             <div class="task-detail-value">${escapeHTML(task.title)}</div>
@@ -278,10 +271,6 @@ function renderTaskDetail(task, children, isParent, parentTaskId = null) {
                 }
             });
         });
-    } else {
-        document.getElementById('back-to-parent-btn')?.addEventListener('click', () => {
-            openDetailPanel(parentTaskId);
-        });
     }
 
     document.getElementById('delete-task-btn')?.addEventListener('click', async () => {
@@ -311,10 +300,18 @@ function renderTaskDetail(task, children, isParent, parentTaskId = null) {
 
 function closeDetailPanel() {
     setState({ selectedTaskId: null });
+    detailPanelParentTaskId = null;
     detailPanel?.classList.remove('active');
 }
 
-panelCloseBtn?.addEventListener('click', closeDetailPanel);
+panelCloseBtn?.addEventListener('click', () => {
+    if (detailPanelParentTaskId) {
+        openDetailPanel(detailPanelParentTaskId);
+        return;
+    }
+
+    closeDetailPanel();
+});
 
 // ── Create Child Task Modal ───────────────────────────────────────────────────
 

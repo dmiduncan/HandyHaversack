@@ -206,12 +206,6 @@
     font-size: 0.9em;
 }
 
-.task-detail-back {
-    width: 100%;
-    margin-bottom: 0.25em;
-    text-align: left;
-}
-
 .task-detail-parent-note {
     color: var(--text-muted);
     font-size: 0.85em;
