@@ -4,7 +4,7 @@
 import { fetchTransactions } from './services/transaction-service.js';
 import { showToast } from './toast.js';
 
-const PROJECTION_END_DATE = new Date(2027, 0, 1);
+const PROJECTION_END_DATE = new Date(2030, 0, 1);
 const INITIAL_PAY_DAY     = new Date(2024, 0, 5);
 INITIAL_PAY_DAY.setHours(0, 0, 0, 0);
 
